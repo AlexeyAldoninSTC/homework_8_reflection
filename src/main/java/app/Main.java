@@ -10,13 +10,15 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) throws IllegalAccessException {
-        TestClass testClass = new TestClass(10, 'A', true, new HashMap<>(), "name");
+        TestClass testClass = new TestClass(10, 'A', true, (byte) 2, new HashMap<>(), "name");
         testClass.getMap().put(1, 10);
         testClass.getMap().put(2, 20);
         testClass.getMap().put(3, 30);
 
         Set<String> fieldsToCleanUp = new HashSet<>();
         fieldsToCleanUp.add("a");
+        fieldsToCleanUp.add("b");
+        fieldsToCleanUp.add("map");
         fieldsToCleanUp.add("isTrue");
         fieldsToCleanUp.add("name");
         fieldsToCleanUp.add("2");
@@ -26,9 +28,12 @@ public class Main {
         fieldsToOutput.add("1");
         fieldsToOutput.add("3");
 
-        System.out.println("testClass = " + testClass);
+        /*System.out.println("testClass = " + testClass);
         cleanUp(testClass, fieldsToCleanUp, fieldsToOutput);
-        System.out.println("testClass = " + testClass);
+        System.out.println("testClass = " + testClass);*/
+        System.out.println("testClass.getMap() = " + testClass.getMap());
+        cleanUp(testClass.getMap(), fieldsToCleanUp, fieldsToOutput);
+        System.out.println("testClass.getMap() = " + testClass.getMap());
     }
 
     /**
@@ -40,15 +45,13 @@ public class Main {
      * @throws IllegalAccessException
      */
     static void cleanUp(Object object, Set<String> fieldsToCleanup, Set<String> fieldsToOutput) throws IllegalAccessException {
+        if (object instanceof Map) {
+            manageTheMap(object, fieldsToCleanup, fieldsToOutput);
+            return;
+        }
         final Field[] fields = object.getClass().getDeclaredFields();
         int matches = 0;
         for (Field field : fields) {
-            if (Arrays.asList(field.getType().getInterfaces()).contains(Map.class) ||
-                    field.getType().equals(Map.class)) {
-                manageTheMap(object, fieldsToCleanup, fieldsToOutput, field);
-                matches++;
-                continue;
-            }
             if (fieldsToCleanup.contains(field.getName())) {
                 setFieldDefaultValue(object, field);
                 matches++;
@@ -70,14 +73,10 @@ public class Main {
      * @param object - source object which field is to be managed
      * @param fieldsToCleanup - list of String values of possible keys to be removed
      * @param fieldsToOutput - list of String values of possible keys to be printed out
-     * @param field - current field to be managed
-     * @throws IllegalAccessException - in case of access failure
      */
     private static void manageTheMap(Object object, Set<String> fieldsToCleanup,
-                                     Set<String> fieldsToOutput, Field field) throws IllegalAccessException {
-        boolean isAccessible = field.isAccessible();
-        field.setAccessible(true);
-        Map<Object, Object> map = (Map<Object, Object>) field.get(object);
+                                     Set<String> fieldsToOutput) {
+        Map<Object, Object> map = (Map<Object, Object>) object;
         final Iterator<Map.Entry<Object, Object>> iterator = map.entrySet().iterator();
         int matchesCount = 0;
         while (iterator.hasNext()) {
@@ -85,7 +84,7 @@ public class Main {
             Object key = entry.getKey();
             if (fieldsToOutput.contains(key.toString())) {
                 matchesCount++;
-                System.out.println(key);
+                System.out.println(entry.getValue());
             }
             if (fieldsToCleanup.contains(key.toString())) {
                 matchesCount++;
@@ -96,7 +95,6 @@ public class Main {
             throw new IllegalArgumentException("При анализе поля-наследника интерфейса Map " +
                     "не выявлено совпадений со значниями в списках на удаление или вывод");
         }
-        field.setAccessible(isAccessible);
     }
 
     /**
@@ -106,13 +104,13 @@ public class Main {
      * @throws IllegalAccessException - in case of failed access
      */
     private static void setFieldDefaultValue(Object object, Field field) throws IllegalAccessException {
-        boolean accessible = field.isAccessible();
+        boolean accessible = field.canAccess(object);
         field.setAccessible(true);
         if (!field.getType().isPrimitive()) {
             field.set(object, null);
             return;
         }
-        Class type = field.getType();
+        Class<?> type = field.getType();
         Object value = field.get(object);
         if (type == boolean.class && Boolean.TRUE.equals(value)) {
             field.set(object, false);
@@ -122,7 +120,7 @@ public class Main {
             field.set(object, (char) 0);
             return;
         }
-        field.set(object, 0);
+        field.set(object, (byte) 0);
         field.setAccessible(accessible);
     }
 }

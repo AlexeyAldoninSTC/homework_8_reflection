@@ -6,13 +6,15 @@ public class TestClass {
     private final int a;
     private final char c;
     private final boolean isTrue;
+    private final byte b;
     private final Map<Integer, Integer> map;
     private final String name;
 
-    public TestClass(int a, char c, boolean isTrue, Map<Integer, Integer> map, String name) {
+    public TestClass(int a, char c, boolean isTrue, byte b, Map<Integer, Integer> map, String name) {
         this.a = a;
         this.c = c;
         this.isTrue = isTrue;
+        this.b = b;
         this.map = map;
         this.name = name;
     }
@@ -39,6 +41,7 @@ public class TestClass {
                 "a=" + a +
                 ", c=" + c +
                 ", isTrue=" + isTrue +
+                ", b=" + b +
                 ", map=" + map +
                 ", name='" + name + '\'' +
                 '}';
